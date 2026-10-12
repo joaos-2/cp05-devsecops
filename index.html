@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Arcanjo SA — Pipeline DevSecOps (CP05)</title>
+  <style>
+    :root {
+      --bg: #0b0d12;
+      --card: #141821;
+      --line: #232a38;
+      --text: #e8ecf3;
+      --muted: #9aa6bb;
+      --accent: #e91e63;
+      --accent-2: #3b82f6;
+      --ok: #22c55e;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.6;
+    }
+    header {
+      padding: 48px 24px 32px;
+      text-align: center;
+      border-bottom: 1px solid var(--line);
+      background: radial-gradient(1200px 300px at 50% -40%, rgba(233,30,99,.18), transparent);
+    }
+    header h1 { margin: 0 0 8px; font-size: clamp(1.6rem, 4vw, 2.4rem); }
+    header .tag { color: var(--accent); font-weight: 700; letter-spacing: .5px; }
+    .wrap { max-width: 920px; margin: 0 auto; padding: 24px; }
+    .team {
+      display: inline-block; text-align: left; margin-top: 16px;
+      background: var(--card); border: 1px solid var(--line);
+      border-radius: 12px; padding: 16px 20px;
+    }
+    .team strong { color: var(--accent-2); }
+    .team ul { margin: 8px 0 0; padding-left: 18px; }
+    section { margin: 32px 0; }
+    h2 { font-size: 1.3rem; border-left: 3px solid var(--accent); padding-left: 12px; }
+    .card {
+      background: var(--card); border: 1px solid var(--line);
+      border-radius: 12px; padding: 20px 22px; margin: 16px 0;
+    }
+    table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+    th, td { text-align: left; padding: 10px 12px; border-bottom: 1px solid var(--line); }
+    th { color: var(--muted); font-weight: 600; font-size: .9rem; }
+    code { background: #0d1017; border: 1px solid var(--line); padding: 2px 6px; border-radius: 6px; color: #d7b3ff; }
+    .pipeline { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 14px; }
+    .guard { background: var(--card); border: 1px solid var(--line); border-radius: 12px; padding: 18px; }
+    .guard h3 { margin: 0 0 6px; color: var(--accent); }
+    .guard p { margin: 0; color: var(--muted); font-size: .95rem; }
+    .calc input, .calc button { font-size: 1rem; padding: 10px 14px; border-radius: 8px; border: 1px solid var(--line); }
+    .calc input { background: #0d1017; color: var(--text); width: 220px; }
+    .calc button { background: var(--accent); color: #fff; border: none; cursor: pointer; margin-left: 8px; }
+    .calc .out { margin-top: 12px; font-size: 1.1rem; }
+    .calc .out span { color: var(--ok); font-weight: 700; }
+    footer { text-align: center; color: var(--muted); padding: 32px 16px; border-top: 1px solid var(--line); font-size: .9rem; }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="tag">FIAP · ENGENHARIA DE SOFTWARE · CP05</div>
+    <h1>Arcanjo SA — Pipeline DevSecOps</h1>
+    <div class="team">
+      <div>Turma <strong>4ESPV</strong></div>
+      <ul>
+        <li>João Rodrigo Solano Nogueira — RM 551319</li>
+        <li>Julia Amorim Bezerra — RM 99609</li>
+        <li>Lana Giulia Auada Leite — RM 551143</li>
+        <li>Tony Willian da Silva Segalin — RM 550667</li>
+      </ul>
+    </div>
+  </header>
+
+  <div class="wrap">
+    <section>
+      <h2>O pipeline de segurança obrigatório</h2>
+      <p>Depois do vazamento de uma chave de API num commit público, a diretoria tornou
+      obrigatório um pipeline de segurança em todo repositório. Este portal passou a rodar com
+      três barreiras automáticas que impedem código inseguro de chegar à produção.</p>
+      <div class="pipeline">
+        <div class="guard">
+          <h3>Gitleaks</h3>
+          <p>Varre o repositório e o histórico de commits atrás de segredos (chaves, tokens, senhas) e barra o push se encontrar.</p>
+        </div>
+        <div class="guard">
+          <h3>Semgrep</h3>
+          <p>Análise estática do código-fonte (SAST). Aponta padrões perigosos como o uso de <code>eval()</code> antes do merge.</p>
+        </div>
+        <div class="guard">
+          <h3>Trivy</h3>
+          <p>Escaneia a imagem Docker e bloqueia a publicação se houver vulnerabilidade (CVE) crítica.</p>
+        </div>
+      </div>
+    </section>
+
+    <section>
+      <h2>Como o container funciona: namespaces e cgroups</h2>
+      <div class="card">
+        <p>Um container não é uma máquina virtual. Ele é um processo comum do Linux, rodando no
+        mesmo kernel do servidor, mas com dois recursos aplicados sobre ele:
+        <strong>namespaces</strong>, que isolam o que ele enxerga, e <strong>cgroups</strong>,
+        que limitam o quanto ele pode consumir.</p>
+        <table>
+          <tr><th>&nbsp;</th><th>Namespaces</th><th>Cgroups</th></tr>
+          <tr><td>Função</td><td>Isolamento</td><td>Limite de recursos</td></tr>
+          <tr><td>Pergunta</td><td>O que o container vê?</td><td>Quanto ele pode usar?</td></tr>
+          <tr><td>Sem ele</td><td>Um container acessa dados de outro</td><td>Um container consome o servidor inteiro</td></tr>
+          <tr><td>Entrega</td><td>Segurança</td><td>Estabilidade e controle de custo</td></tr>
+        </table>
+      </div>
+    </section>
+
+    <section>
+      <h2>Calculadora rápida</h2>
+      <div class="card calc">
+        <p>Digite uma expressão (ex.: <code>2 + 3 * 4</code>):</p>
+        <input id="expr" type="text" placeholder="2 + 3 * 4" />
+        <button onclick="calcular()">Calcular</button>
+        <div class="out">Resultado: <span id="resultado">—</span></div>
+      </div>
+    </section>
+  </div>
+
+  <footer>FIAP — DevSecOps and Cloud Computing — CP05 — Turma 4ESPV</footer>
+
+  <script src="app.js"></script>
+</body>
+</html>

@@ -1,0 +1,13 @@
+rules:
+  - id: insecure-eval-usage
+    languages: [javascript]
+    severity: ERROR
+    message: >
+      Uso de eval() detectado. eval() executa qualquer string como codigo,
+      permitindo execucao arbitraria a partir de entrada do usuario.
+      Use um parser de expressoes ou valide/escape a entrada.
+    metadata:
+      category: security
+      cwe: "CWE-95: Improper Neutralization of Directives in Dynamically Evaluated Code (Eval Injection)"
+    patterns:
+      - pattern: eval(...)

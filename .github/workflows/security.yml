@@ -1,0 +1,79 @@
+name: Security Pipeline
+
+on: [push, pull_request]
+
+permissions:
+  contents: read
+
+jobs:
+  # ------------------------------------------------------------------
+  # BARREIRA 1 — Gitleaks: varre o repositorio e o historico atras de
+  # segredos. Falha (exit 1) se encontrar qualquer chave/token/senha.
+  # ------------------------------------------------------------------
+  gitleaks:
+    name: Gitleaks (Secret Scan)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0            # historico completo, para varrer todos os commits
+
+      - name: Instalar Gitleaks
+        run: |
+          curl -sSfL https://github.com/gitleaks/gitleaks/releases/download/v8.21.2/gitleaks_8.21.2_linux_x64.tar.gz -o gitleaks.tar.gz
+          tar -xzf gitleaks.tar.gz gitleaks
+          sudo mv gitleaks /usr/local/bin/
+          gitleaks version
+
+      - name: Rodar Gitleaks
+        run: gitleaks detect --source . --no-banner --verbose --redact
+
+  # ------------------------------------------------------------------
+  # BARREIRA 2 — Semgrep: analise estatica (SAST) do codigo-fonte.
+  # Falha (--error) se encontrar padrao perigoso, como o uso de eval().
+  # ------------------------------------------------------------------
+  semgrep:
+    name: Semgrep (SAST)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Instalar Semgrep
+        run: pip install semgrep
+
+      - name: Rodar Semgrep (regra local — barreira do eval)
+        # regra local, sem depender de rede: garante a deteccao do eval()
+        run: semgrep scan --config .semgrep/ --error --verbose
+
+      - name: Semgrep ruleset auto (cobertura extra — informativo)
+        if: always()
+        continue-on-error: true
+        run: semgrep scan --config auto
+
+  # ------------------------------------------------------------------
+  # BARREIRA 3 — Trivy: escaneia a imagem Docker. Mostra HIGH/CRITICAL
+  # (relatorio) e bloqueia (exit 1) se houver CVE CRITICO.
+  # ------------------------------------------------------------------
+  trivy:
+    name: Trivy (Container Scan)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Build da imagem
+        run: docker build -t cp05-site:scan .
+
+      - name: Instalar Trivy
+        run: |
+          curl -sfL https://raw.githubusercontent.com/aquasecurity/trivy/main/contrib/install.sh | sh -s -- -b /usr/local/bin
+          trivy --version
+
+      - name: Trivy — relatorio (HIGH + CRITICAL)
+        run: trivy image --scanners vuln --severity HIGH,CRITICAL --ignore-unfixed cp05-site:scan
+
+      - name: Trivy — barreira (bloqueia CVE CRITICO)
+        run: trivy image --scanners vuln --severity CRITICAL --ignore-unfixed --exit-code 1 cp05-site:scan
